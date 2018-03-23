@@ -21,6 +21,15 @@ public class JdbcDemo {
                     "DATE_BIRTH DATE, " +
                     "PRIMARY KEY (ID))";
     private static final String SELECT_ALL_USERS_QUERY = "SELECT * FROM USER";
+    private static final String INSERT_USER_QUERY = "INSERT INTO USER VALUES(?, ?, ?)";
+
+    /**
+     * Данные для множественной вставки в таблицу USER
+     */
+    private static final int[] BATCH_INSERT_IDS = {2, 3};
+    private static final String[] BATCH_INSERT_NAMES = {"Абырвалг", "Darth Vader"};
+    private static final Date[] BATCH_INSERT_BIRTH_DATES = {Date.valueOf("1983-05-24"), Date.valueOf("2017-11-30")};
+    private static final int BATCH_INSERT_ROW_COUNT = 2;
 
     public static void main(String[] args) throws Exception {
 
@@ -37,7 +46,9 @@ public class JdbcDemo {
         System.out.println("2. Выполнение запросов к БД.\n");
 
         Statement statement;
+        PreparedStatement preparedStatement;
         ResultSet resultSet;
+        int recordCount;
 
         // 2.1 Создаем таблицу
         System.out.println("2.1 Создание таблицы.\n");
@@ -60,6 +71,55 @@ public class JdbcDemo {
 
         // 2.2 Делаем выборку из таблицы
         System.out.println("2.2 Выборка из таблицы.\n");
+        statement = connection.createStatement();
+        resultSet = statement.executeQuery(SELECT_ALL_USERS_QUERY);
+        printUserTableResultSet(resultSet);
+        resultSet.close();
+        statement.close();
+
+        // 2.3 Делаем вставку в таблицу
+        System.out.println("2.3 Вставка записей в таблицу.\n");
+        // Формируем параметризованный SQL-запрос
+        preparedStatement = connection.prepareStatement(INSERT_USER_QUERY);
+        // Задаем значения параметров
+        preparedStatement.setInt(1, 1);
+        preparedStatement.setString(2, "Вагон Героев");
+        preparedStatement.setDate(3, Date.valueOf("1987-01-27"));
+        // Выполняем сформированный запрос
+        preparedStatement.execute();
+        // Проверяем, сколько строк было добавлено
+        recordCount = preparedStatement.getUpdateCount();
+        if (recordCount == 1) {
+            System.out.println("Добавлена 1 строка.\n");
+        } else {
+            preparedStatement.close();
+            throw new Exception("Невозможно добавить строку в таблицу USER.");
+        }
+        preparedStatement.close();
+        // Делаем множественную вставку
+        preparedStatement = connection.prepareStatement(INSERT_USER_QUERY);
+        for (int i = 0; i < BATCH_INSERT_ROW_COUNT; i++) {
+            preparedStatement.setInt(1, BATCH_INSERT_IDS[i]);
+            preparedStatement.setString(2, BATCH_INSERT_NAMES[i]);
+            preparedStatement.setDate(3, BATCH_INSERT_BIRTH_DATES[i]);
+            preparedStatement.addBatch();
+        }
+        int[] batchRecordCount = preparedStatement.executeBatch();
+        // Проверяем, сколько строк было добавлено
+        recordCount = 0;
+        for (int oneRecordCount : batchRecordCount) {
+            if (oneRecordCount >= 0) {
+                recordCount += oneRecordCount;
+            }
+        }
+        if (recordCount == BATCH_INSERT_ROW_COUNT) {
+            System.out.println(String.format("Добавлено %d строк(и).\n", BATCH_INSERT_ROW_COUNT));
+        } else {
+            preparedStatement.close();
+            throw new Exception("Невозможно добавить строки в таблицу USER.");
+        }
+        preparedStatement.close();
+        // Проверяем факт вставки - делаем выборку из таблицы
         statement = connection.createStatement();
         resultSet = statement.executeQuery(SELECT_ALL_USERS_QUERY);
         printUserTableResultSet(resultSet);
