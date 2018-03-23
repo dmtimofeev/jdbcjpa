@@ -1,10 +1,8 @@
 package ru.sportmaster.demo;
 
-import org.hibernate.Criteria;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
-import org.hibernate.criterion.Restrictions;
 import ru.sportmaster.demo.model.User;
 
 import javax.persistence.criteria.CriteriaBuilder;
@@ -46,15 +44,15 @@ public class HibernateDemo {
         System.out.println("1. Запрос на SQL");
         users = session
                 .createNativeQuery(SELECT_USERS_SQL_QUERY, User.class)
-                .list();
+                .getResultList();
         printUserTableResultSet(users);
         // 3.2 Запросы на HQL
         System.out.println("2. Запрос на HQL");
         users = session
                 .createQuery(SELECT_USERS_HQL_QUERY, User.class)
-                .list();
+                .getResultList();
         printUserTableResultSet(users);
-        // 3.3 Запросы на HQL
+        // 3.3 Запросы с использованием Criteria
         System.out.println("3. Запрос с использованием Criteria");
         CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
         CriteriaQuery<User> criteriaQuery = criteriaBuilder.createQuery(User.class);
