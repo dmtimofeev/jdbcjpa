@@ -23,6 +23,7 @@ public class JdbcDemo {
     private static final String SELECT_ALL_USERS_QUERY = "SELECT * FROM USER";
     private static final String INSERT_USER_QUERY = "INSERT INTO USER VALUES(?, ?, ?)";
     private static final String UPDATE_USER_QUERY = "UPDATE USER SET NAME = ?, DATE_BIRTH = ? WHERE ID = ?";
+    private static final String DELETE_USER_QUERY = "DELETE FROM USER WHERE NAME LIKE ?";
 
     /**
      * Данные для множественной вставки в таблицу USER
@@ -145,6 +146,30 @@ public class JdbcDemo {
         }
         preparedStatement.close();
         // Проверяем факт вставки - делаем выборку из таблицы
+        statement = connection.createStatement();
+        resultSet = statement.executeQuery(SELECT_ALL_USERS_QUERY);
+        printUserTableResultSet(resultSet);
+        resultSet.close();
+        statement.close();
+
+        // 2.5 Удаляем записи
+        System.out.println("2.5 Удаление записей из таблицы.\n");
+        // Формируем и выполняем параметризованный SQL-запрос
+        preparedStatement = connection.prepareStatement(DELETE_USER_QUERY);
+        // Задаем значения параметров
+        preparedStatement.setString(1, "Ва%");
+        // Выполняем сформированный запрос
+        preparedStatement.execute();
+        // Проверяем, сколько строк было удалено
+        recordCount = preparedStatement.getUpdateCount();
+        if (recordCount == 2) {
+            System.out.println("Удалено 2 строки.\n");
+        } else {
+            preparedStatement.close();
+            throw new Exception("Невозможно удалить строки из таблицы USER.");
+        }
+        preparedStatement.close();
+        // Проверяем факт удаления - делаем выборку из таблицы
         statement = connection.createStatement();
         resultSet = statement.executeQuery(SELECT_ALL_USERS_QUERY);
         printUserTableResultSet(resultSet);
