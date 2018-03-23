@@ -1,16 +1,23 @@
 package ru.sportmaster.demo;
 
+import org.hibernate.Criteria;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
+import org.hibernate.criterion.Restrictions;
 import ru.sportmaster.demo.model.User;
 
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
 import java.util.Date;
 import java.util.List;
 
 public class HibernateDemo {
 
-    private static final String SELECT_ALL_USERS_QUERY = "SELECT * FROM USER";
+    private static final String SELECT_USERS_SQL_QUERY = "SELECT * FROM USER WHERE ID < 3";
+
+    private static final String SELECT_USERS_HQL_QUERY = "select u from USER u where u.id < 3";
 
     public static void main(String[] args) throws Exception {
 
@@ -34,8 +41,27 @@ public class HibernateDemo {
         }
 
         // 3. Выполняем запросы к БД
-        // Проверка корректности настройки маппинга - делаем выборку из таблицы
-        List<User> users = session.createNativeQuery(SELECT_ALL_USERS_QUERY, User.class).list();
+        List<User> users;
+        // 3.1 Запросы на SQL
+        System.out.println("1. Запрос на SQL");
+        users = session
+                .createNativeQuery(SELECT_USERS_SQL_QUERY, User.class)
+                .list();
+        printUserTableResultSet(users);
+        // 3.2 Запросы на HQL
+        System.out.println("2. Запрос на HQL");
+        users = session
+                .createQuery(SELECT_USERS_HQL_QUERY, User.class)
+                .list();
+        printUserTableResultSet(users);
+        // 3.3 Запросы на HQL
+        System.out.println("3. Запрос с использованием Criteria");
+        CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
+        CriteriaQuery<User> criteriaQuery = criteriaBuilder.createQuery(User.class);
+        Root<User> root = criteriaQuery.from(User.class);
+        criteriaQuery.select(root);
+        criteriaQuery.where(criteriaBuilder.lessThan(root.get("id"), 3));
+        users = session.createQuery(criteriaQuery).getResultList();
         printUserTableResultSet(users);
 
         // 4. Закрываем сессию
