@@ -22,6 +22,7 @@ public class JdbcDemo {
                     "PRIMARY KEY (ID))";
     private static final String SELECT_ALL_USERS_QUERY = "SELECT * FROM USER";
     private static final String INSERT_USER_QUERY = "INSERT INTO USER VALUES(?, ?, ?)";
+    private static final String UPDATE_USER_QUERY = "UPDATE USER SET NAME = ?, DATE_BIRTH = ? WHERE ID = ?";
 
     /**
      * Данные для множественной вставки в таблицу USER
@@ -117,6 +118,30 @@ public class JdbcDemo {
         } else {
             preparedStatement.close();
             throw new Exception("Невозможно добавить строки в таблицу USER.");
+        }
+        preparedStatement.close();
+        // Проверяем факт вставки - делаем выборку из таблицы
+        statement = connection.createStatement();
+        resultSet = statement.executeQuery(SELECT_ALL_USERS_QUERY);
+        printUserTableResultSet(resultSet);
+        resultSet.close();
+        statement.close();
+
+        // 2.4 Обновляем запись в таблице
+        System.out.println("2.4 Обновление записей в таблице.\n");
+        // Формируем и выполняем параметризованный SQL-запрос
+        preparedStatement = connection.prepareStatement(UPDATE_USER_QUERY);
+        preparedStatement.setString(1, "Вася Пупкин");
+        preparedStatement.setDate(2, Date.valueOf("1997-02-14"));
+        preparedStatement.setInt(3, 2);
+        preparedStatement.execute();
+        // Проверяем, сколько строк было обновлено
+        recordCount = preparedStatement.getUpdateCount();
+        if (recordCount == 1) {
+            System.out.println("Обновлена 1 строка.\n");
+        } else {
+            preparedStatement.close();
+            throw new Exception("Невозможно обновить строку в таблице USER.");
         }
         preparedStatement.close();
         // Проверяем факт вставки - делаем выборку из таблицы
