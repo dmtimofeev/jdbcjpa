@@ -13,6 +13,8 @@
         <property name="connection.username">sa</property>
         <property name="connection.password"/>
         <property name="show_sql">true</property>
+        <!--Настройка маппинга таблиц БД на Java-классы-->
+        <mapping resource="hibernate.mapping.xml"/>
     </session-factory>
 
 </hibernate-configuration>
