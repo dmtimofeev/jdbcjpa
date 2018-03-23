@@ -14,7 +14,7 @@
         <property name="connection.password"/>
         <property name="show_sql">true</property>
         <!--Настройка маппинга таблиц БД на Java-классы-->
-        <mapping resource="hibernate.mapping.xml"/>
+        <mapping class="ru.sportmaster.demo.model.User"/>
     </session-factory>
 
 </hibernate-configuration>
