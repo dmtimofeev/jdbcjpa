@@ -2,20 +2,19 @@ package ru.sportmaster.demo;
 
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
 import org.hibernate.cfg.Configuration;
+import org.hibernate.query.Query;
 import ru.sportmaster.demo.model.User;
 
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Root;
+import java.sql.Timestamp;
 import java.util.Date;
 import java.util.List;
 
 public class HibernateDemo {
-
-    private static final String SELECT_USERS_SQL_QUERY = "SELECT * FROM USER WHERE ID < 3";
-
-    private static final String SELECT_USERS_HQL_QUERY = "select u from USER u where u.id < 3";
 
     public static void main(String[] args) throws Exception {
 
@@ -40,27 +39,47 @@ public class HibernateDemo {
 
         // 3. Выполняем запросы к БД
         List<User> users;
-        // 3.1 Запросы на SQL
-        System.out.println("1. Запрос на SQL");
-        users = session
-                .createNativeQuery(SELECT_USERS_SQL_QUERY, User.class)
-                .getResultList();
-        printUserTableResultSet(users);
-        // 3.2 Запросы на HQL
-        System.out.println("2. Запрос на HQL");
-        users = session
-                .createQuery(SELECT_USERS_HQL_QUERY, User.class)
-                .getResultList();
-        printUserTableResultSet(users);
-        // 3.3 Запросы с использованием Criteria
-        System.out.println("3. Запрос с использованием Criteria");
         CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
-        CriteriaQuery<User> criteriaQuery = criteriaBuilder.createQuery(User.class);
-        Root<User> root = criteriaQuery.from(User.class);
-        criteriaQuery.select(root);
-        criteriaQuery.where(criteriaBuilder.lessThan(root.get("id"), 3));
-        users = session.createQuery(criteriaQuery).getResultList();
+        CriteriaQuery<User> allUsersCriteriaQuery = criteriaBuilder.createQuery(User.class);
+        Root<User> userRoot = allUsersCriteriaQuery.from(User.class);
+        allUsersCriteriaQuery.select(userRoot);
+        Query<User> allUsersQuery = session.createQuery(allUsersCriteriaQuery);
+
+        // Начало транзакции
+        Transaction transaction = session.beginTransaction();
+
+        // Выборка данных из таблицы
+        users = allUsersQuery.getResultList();
         printUserTableResultSet(users);
+
+        // 3.1 Вставка новой записи
+        System.out.println("1. Вставка новой записи");
+        User newUser = new User();
+        newUser.setId(4);
+        newUser.setName("Вася Пупкин");
+        newUser.setDateBirth(Timestamp.valueOf("2012-12-21 00:00:00"));
+        session.save(newUser);
+        // Выборка данных из таблицы
+        users = allUsersQuery.getResultList();
+        printUserTableResultSet(users);
+        // 3.2 Изменение записи
+        System.out.println("2. Изменение записи");
+        User editUser = session.get(User.class, 4);
+        editUser.setName("Поросенок Петр");
+        session.update(editUser);
+        // Выборка данных из таблицы
+        users = allUsersQuery.getResultList();
+        printUserTableResultSet(users);
+        // 3.3 Удаление записи
+        System.out.println("3. Удаление записи");
+        User deleteUser = session.get(User.class, 4);
+        session.delete(deleteUser);
+        // Выборка данных из таблицы
+        users = allUsersQuery.getResultList();
+        printUserTableResultSet(users);
+
+        // Коммит транзакции
+        transaction.commit();
 
         // 4. Закрываем сессию
         session.close();
